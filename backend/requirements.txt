@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────
+# NutriAI RAG — Python Dependencies
+# Install: pip install -r backend/requirements.txt
+# ─────────────────────────────────────────────────────
+
+# API Framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+
+# PDF Processing
+pymupdf>=1.24.0
+
+# NLP / Tokenization
+nltk>=3.8.1
+
+# Embeddings (Voyage AI)
+voyageai>=0.2.3
+
+# Vector Store (Pinecone SDK v3+)
+pinecone>=3.2.2
+
+# BM25 Sparse Retrieval
+rank-bm25>=0.2.2
+
+# HTTP (for OpenRouter LLM calls)
+requests>=2.31.0
+
+# Data Processing
+numpy>=1.26.0
+pandas>=2.2.0
+pyarrow>=16.0.0
+
+# Environment
+python-dotenv>=1.0.1
+
+# Validation (FastAPI uses this)
+pydantic>=2.0.0
