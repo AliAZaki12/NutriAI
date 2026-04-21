@@ -1,5 +1,7 @@
 # 🥗 NutriAI — Hybrid RAG Nutrition Assistant
 
+( https://nutri-ai--aliahmedzaki788.replit.app/ )
+
 ---
 
 ## Description
