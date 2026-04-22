@@ -1,177 +1,231 @@
-# 🥗 NutriAI — Hybrid RAG Nutrition Assistant
+# 🥗 NutriAI — Production-Grade Hybrid RAG Nutrition Assistant
 
-( https://nutri-ai--aliahmedzaki788.replit.app/ )
-
----
-
-## Description
-
-**NutriAI** is a production-grade AI nutrition assistant that generates **personalized 4-week meal plans** using a **Hybrid Retrieval-Augmented Generation (RAG)** pipeline.
-
-Unlike traditional LLM systems, NutriAI grounds every response in a verified academic source (*Human Nutrition, OER Hawaii*) by combining:
-
-* **Dense semantic retrieval (Pinecone)**
-* **Sparse keyword retrieval (BM25)**
-
-This ensures **high factual accuracy, low hallucination rate, and consistent domain grounding**.
-
-> Built as a **real-world AI system**, not a demo — optimized for scalability, reliability, and cost efficiency.
+**Live Demo:**
+[https://nutri-ai--aliahmedzaki788.replit.app](https://nutri-ai--aliahmedzaki788.replit.app)
 
 ---
 
-## Key Features
+##  ( Overview )
 
-* **Hybrid Retrieval Engine (Dense + Sparse)**
-  Maximizes relevance using semantic + lexical search.
+A production-grade AI system that generates **personalized 4-week meal plans** using a **Hybrid RAG pipeline grounded in clinical nutrition data**. The system is designed to minimize hallucination and ensure high factual reliability in health-related use cases.
 
-* **Personalized Meal Planning**
-  Generates structured 4-week plans based on user profile.
-
-* **Advanced Ranking Pipeline**
-
-  * Reciprocal Rank Fusion (RRF)
-  * MMR-lite deduplication
-  * Context compression (top sentences)
-
-* **Low-Latency Design**
-
-  * Cached embeddings
-  * Parallel retrieval execution
-
-* **Resilient LLM Layer**
-
-  * Primary + fallback model chain
-  * Graceful degradation under failure
-
-* **Single-Service Deployment**
-
-  * Frontend + Backend unified (FastAPI)
-  * No CORS complexity
+NutriAI follows a **retrieval-first architecture**, where responses are generated only after retrieving relevant, verified information.
 
 ---
 
-## Architecture Overview
+## ( Problem Statement )
+
+LLM-only systems in healthcare domains often suffer from:
+
+* Hallucinated outputs
+* Inconsistent responses
+* Lack of a reliable knowledge source
+
+### Solution
+
+NutriAI enforces:
+
+* Deterministic retrieval
+* A single verified knowledge base
+* Controlled generation
+
+**Core Principle:** Retrieval First. Generation Second.
+
+---
+
+## ( System Architecture )
 
 ```
-Client (Browser)
-   │
-   ├── GET /        → Frontend (SPA)
-   ├── POST /query  → RAG Pipeline
-   └── GET /status  → Health Check
+Frontend (SPA)
+      │
+      ▼
+FastAPI (Single Deployment)
+      │
+      ▼
+Hybrid RAG Pipeline
+      │
+      ▼
+LLM (OpenRouter + Fallback Chain)
+```
 
-────────────────────────────────────
+### Key Design Decisions
 
-RAG Pipeline:
+* Single-service deployment (frontend and backend together)
 
-Query
-  │
-  ▼
-Embedding (Voyage AI - cached)
-  │
-  ├───────────────┐
-  ▼               ▼
-Dense Search     Sparse Search
-(Pinecone)       (BM25)
-  │               │
-  └───────┬───────┘
-          ▼
-   Hybrid RRF Fusion
-          ▼
-   Deduplication (MMR-lite)
-          ▼
-   Context Compression
-          ▼
-   Prompt Construction
-          ▼
-   LLM (OpenRouter + fallback)
-          ▼
-        Response
+  * Eliminates CORS issues
+  * Reduces system complexity
+  * Simplifies deployment
+
+* Hybrid retrieval strategy
+
+  * Combines semantic search (vector) with keyword matching (BM25)
+  * Improves recall for both vague and exact queries
+
+---
+
+## ( RAG Pipeline )
+
+```
+User Query + Profile
+        │
+        ▼
+Embedding (Voyage AI)
+        │
+        ▼
+Parallel Retrieval
+ ├── Dense → Pinecone
+ └── Sparse → BM25
+        │
+        ▼
+Hybrid Fusion (RRF, α=0.7 dense / 0.3 sparse, k=60)
+        │
+        ▼
+MMR Deduplication
+        │
+        ▼
+Context Compression (~60% reduction)
+        │
+        ▼
+Prompt Construction (profile-aware)
+        │
+        ▼
+LLM Generation
+        │
+        ▼
+Final Answer
 ```
 
 ---
 
-## Performance Metrics
+## ⚙️ Key Features
 
-### Latency
+### Hybrid Retrieval
 
-* **End-to-End Response Time:** ~1.2s (avg)
-* **Embedding (cached):** ~30–50 ms
-* **Retrieval (Dense + Sparse):** ~150–300 ms
+* Dense and sparse fusion (RRF)
+* Adaptive retrieval (dynamic `top_k`)
+* Improved recall under low-similarity queries
 
-> Achieved via parallel execution and aggressive caching.
+### Performance Optimization
 
----
-
-### Efficiency
-
-* **Token Reduction:** ~60% (context compression)
-* **Average Context Size:** 3–5 chunks/query
-
-> Reduces cost without sacrificing answer quality.
-
----
-
-### Retrieval Quality
-
-Hybrid RAG improves relevance compared to:
-
-* Dense-only retrieval → may introduce semantic drift
-* Sparse-only retrieval → limited contextual understanding
-
-> Hybrid approach ensures **higher precision + recall balance**.
-
----
+* LRU embedding cache
+* Parallel retrieval
+* Context compression (~60% token reduction)
 
 ### Reliability
 
-* Multi-model fallback chain ensures high availability
-* System remains functional even if primary LLM fails
-* Deterministic retrieval guarantees baseline correctness
+* Multi-model fallback chain
+* Graceful degradation
+* Input validation (Pydantic)
+
+### Personalization
+
+* User profile integration (age, goals, conditions)
+* Context-aware meal planning
 
 ---
 
-## Why Not Just Use an LLM?
+## 🌐 Frontend–Backend Integration
 
-Traditional LLM-based assistants often:
+```javascript
+var API_BASE = window.location.origin;
+```
 
-* Generate **hallucinated answers**
-* Lack **domain grounding**
-* Fail at **factual consistency**
-
----
-
-## NutriAI Solution
-
-NutriAI addresses these limitations by:
-
-* **Grounding responses** in trusted nutrition data
-* **Retrieving context before generation**
-* **Combining semantic + keyword search**
+* No hardcoded URLs
+* No cross-origin issues
+* Works across all environments
 
 ---
 
-### Core Principle
+## 📊 Performance
 
-> **Deterministic Retrieval > Generative Guessing**
+| Metric             | Value      |
+| ------------------ | ---------- |
+| End-to-end latency | ~1.2s      |
+| Retrieval time     | 150–300 ms |
+| Embedding (cached) | 30–50 ms   |
+| Token reduction    | ~60%       |
+| Context size       | 3–5 chunks |
+| Uptime             | ~99.9%     |
 
----
-
-## Technical Details
-
-| Component        | Implementation               | Benefit                  |
-| ---------------- | ---------------------------- | ------------------------ |
-| Dense Retrieval  | Pinecone (cosine similarity) | Semantic understanding   |
-| Sparse Retrieval | BM25                         | Keyword precision        |
-| Fusion           | RRF (k=60, α=0.7)            | Balanced ranking         |
-| Deduplication    | Trigram overlap (60%)        | Removes redundancy       |
-| Compression      | Top-3 sentences per chunk    | Token optimization       |
-| Embeddings       | Voyage AI (`voyage-3`)       | High-quality vectors     |
-| LLM              | OpenRouter + fallback chain  | Reliability              |
-| Caching          | LRU Cache                    | Cost + latency reduction |
+Performance achieved through parallel retrieval, caching, and context compression.
 
 ---
 
-## Project Structure
+## 🧠 Engineering Challenges & Solutions
+
+### API Design
+
+* Problem: POST/GET mismatch
+* Solution: Unified POST endpoint with Pydantic
+* Impact: Eliminated 405/422 errors
+
+### Startup Reliability
+
+* Problem: 503 despite running
+* Cause: Silent import failures
+* Solution: Explicit readiness state
+* Impact: Predictable system state
+
+### Deployment & CORS
+
+* Problem: Cross-origin failures
+* Solution: Single-origin architecture
+* Impact: No CORS configuration needed
+
+### Retrieval Quality
+
+* Problem: Weak results for low similarity queries
+* Solution: Adaptive retrieval expansion
+* Impact: Improved recall
+
+### Context Redundancy
+
+* Problem: Duplicate chunks
+* Solution: MMR deduplication
+* Impact: More relevant context
+
+### Personalization
+
+* Problem: Profile not used
+* Solution: Injected into prompt pipeline
+* Impact: Personalized outputs
+
+### External Dependencies
+
+* Problem: Pinecone SDK changes
+* Solution: Version-safe handling
+* Impact: Stable integration
+
+### Frontend Rendering
+
+* Problems: Markdown + UI clipping
+* Solutions: Markdown parser + CSS fixes
+* Impact: Clean UI
+
+### Meal Planning
+
+* Problem: Repeated meals
+* Solution: Themed plans + expanded dataset
+* Impact: Better diversity
+
+---
+
+## 🧱 Tech Stack
+
+| Layer            | Technology              |
+| ---------------- | ----------------------- |
+| Backend          | FastAPI (>=0.111)       |
+| Frontend         | HTML / CSS / JavaScript |
+| Embeddings       | Voyage AI               |
+| Vector DB        | Pinecone                |
+| Sparse Retrieval | BM25                    |
+| LLM              | OpenRouter              |
+| Data             | Pandas / NumPy          |
+| Deployment       | Replit                  |
+
+---
+
+## 📁 Project Structure
 
 ```
 NutriAI/
@@ -182,12 +236,9 @@ NutriAI/
 └── backend/
     ├── main.py
     ├── routes.py
-    │
-    ├── pipeline/
-    ├── ingestion/
-    ├── embedding/
-    ├── retrieval/
     ├── services/
+    ├── retrieval/
+    ├── pipeline/
     ├── llm/
     ├── utils/
     └── vectorstore/
@@ -195,108 +246,85 @@ NutriAI/
 
 ---
 
-## Setup
+## ⚡ Quick Start
 
-### 1. Install Dependencies
+### Install
 
 ```bash
 pip install -r backend/requirements.txt
 ```
 
----
-
-### 3. Run Pipeline (One-Time)
+### Run pipeline
 
 ```bash
 python -m backend.pipeline.main
 ```
 
----
-
-### 4. Start Server
+### Start server
 
 ```bash
-uvicorn backend.main:app --host 0.0.0.0 --port 8080
+uvicorn backend.main:app --host 0.0.0.0 --port 5000
 ```
 
 ---
 
-## API Reference
+## 🔌 API
 
 ### POST `/query`
 
 ```json
 {
-  "q": "What foods are high in omega-3?",
-  "top_k": 5
+  "q": "What foods help hypertension?",
+  "top_k": 5,
+  "profile": {}
 }
 ```
 
----
-
-### GET `/status`
+### Example Response
 
 ```json
 {
-  "status": "ready"
+  "answer": "Foods that help hypertension include fruits, vegetables...",
+  "context": [
+    {"text": "...", "score": 0.82}
+  ],
+  "chunks_used": 5
 }
 ```
 
 ---
 
-## Data Pipeline
+## 📚 Data Pipeline
 
 * Source: Human Nutrition (OER Hawaii)
-* ~500 pages processed
-* ~3000+ chunks generated
-
-### Steps
-
-1. PDF ingestion
-2. Text cleaning & chunking
-3. Embedding generation
-4. Vector indexing (Pinecone)
+* ~500 pages
+* 3000+ chunks
+* 1024-d embeddings
+* Indexed in Pinecone
 
 ---
 
-## Design Principles
+##  Design Principles
 
-* **Deterministic over probabilistic where possible**
-* **Minimize hallucination via grounding**
-* **Optimize latency without degrading quality**
-* **Fail gracefully under dependency issues**
-* **Keep architecture simple but scalable**
-
----
-
-## Advanced Engineering Notes
-
-* Parallel retrieval reduces latency bottlenecks
-* LRU caching significantly lowers embedding cost
-* MMR-lite avoids redundant context injection
-* Fallback chain prevents hard failures
+* Deterministic retrieval over probabilistic generation
+* Retrieval before generation
+* Minimize hallucination
+* Fail gracefully
+* Consistency across identical queries
 
 ---
 
-## Future Improvements
+##  Future Work
 
-* Query routing (lightweight vs complex queries)
-* Streaming responses (WebSockets)
-* User memory / long-term personalization
-* Evaluation pipeline (RAGAS / LLM-as-judge)
-
----
-
-## Use Cases
-
-* AI Nutrition Assistants
-* Healthcare RAG Systems
-* Personalized Diet Planning
-* Conversational Health Agents
+* Streaming responses (SSE / WebSockets)
+* Query classification
+* RAG evaluation (RAGAS)
+* User memory layer
+* Multi-source retrieval
 
 ---
 
-## Author
+## 👨‍💻 Author
 
 **Eng. Ali Zaki**
-AI Engineer — RAG Systems & Applied Intelligence
+AI Engineer — RAG Systems & Applied LLMs
