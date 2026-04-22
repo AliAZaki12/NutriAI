@@ -5,35 +5,49 @@
 
 ---
 
-##  ( Overview )
+## 🚀 Overview
 
-A production-grade AI system that generates **personalized 4-week meal plans** using a **Hybrid RAG pipeline grounded in clinical nutrition data**. The system is designed to minimize hallucination and ensure high factual reliability in health-related use cases.
+NutriAI is a **production-grade AI nutrition system** that generates:
 
-NutriAI follows a **retrieval-first architecture**, where responses are generated only after retrieving relevant, verified information.
+* Personalized **4-week meal plans (112 unique meals)**
+* Intelligent **nutrition guidance via bilingual chatbot (Arabic / English)**
+* Accurate **calorie & macro recommendations**
 
----
+The system is built on a **Hybrid Retrieval-Augmented Generation (RAG)** pipeline to ensure:
 
-## ( Problem Statement )
-
-LLM-only systems in healthcare domains often suffer from:
-
-* Hallucinated outputs
-* Inconsistent responses
-* Lack of a reliable knowledge source
-
-### Solution
-
-NutriAI enforces:
-
-* Deterministic retrieval
-* A single verified knowledge base
-* Controlled generation
-
-**Core Principle:** Retrieval First. Generation Second.
+* High factual accuracy
+* Minimal hallucination
+* Strong personalization
 
 ---
 
-## ( System Architecture )
+## 🎯 Core Principle
+
+> **Retrieval First. Generation Second.**
+
+Unlike traditional LLM apps, NutriAI enforces **deterministic retrieval from a verified knowledge base before generation**, ensuring reliability in a health-sensitive domain.
+
+---
+
+## ⚠️ Problem Statement
+
+Standard LLM-based systems in healthcare suffer from:
+
+* ❌ Hallucinated responses
+* ❌ Inconsistent outputs
+* ❌ No grounding in verified data
+
+### ✅ Solution
+
+NutriAI introduces:
+
+* Hybrid retrieval (Dense + Sparse)
+* Controlled prompt construction
+* Profile-aware generation
+
+---
+
+## 🧠 System Architecture
 
 ```
 Frontend (SPA)
@@ -50,93 +64,124 @@ LLM (OpenRouter + Fallback Chain)
 
 ### Key Design Decisions
 
-* Single-service deployment (frontend and backend together)
+* **Single-service deployment**
 
   * Eliminates CORS issues
-  * Reduces system complexity
-  * Simplifies deployment
+  * Simplifies infra
+  * Improves reliability
 
-* Hybrid retrieval strategy
+* **Hybrid Retrieval**
 
-  * Combines semantic search (vector) with keyword matching (BM25)
-  * Improves recall for both vague and exact queries
+  * Dense (semantic understanding)
+  * Sparse (exact keyword matching)
 
 ---
 
-## ( RAG Pipeline )
+## 🔍 RAG Pipeline (Detailed)
 
 ```
-User Query + Profile
+User Query + Profile + Current Day
         │
         ▼
 Embedding (Voyage AI)
         │
         ▼
 Parallel Retrieval
- ├── Dense → Pinecone
- └── Sparse → BM25
+ ├── Dense → Pinecone (Top-K)
+ └── Sparse → BM25 (Top-K)
         │
         ▼
-Hybrid Fusion (RRF, α=0.7 dense / 0.3 sparse, k=60)
+Hybrid Fusion (RRF)
+  α = 0.7 (Dense)
+  α = 0.3 (Sparse)
         │
         ▼
 MMR Deduplication
         │
         ▼
-Context Compression (~60% reduction)
+Context Compression (~60%)
         │
         ▼
-Prompt Construction (profile-aware)
+Prompt Builder (Profile + Language Override)
         │
         ▼
-LLM Generation
+LLM (OpenRouter)
         │
         ▼
-Final Answer
+Final Response (Markdown → HTML)
 ```
 
 ---
 
-## ⚙️ Key Features
+## ✨ Key Features
 
-### Hybrid Retrieval
+### 🍽 Egyptian Meal Planning Engine
 
-* Dense and sparse fusion (RRF)
-* Adaptive retrieval (dynamic `top_k`)
-* Improved recall under low-similarity queries
+* 4 Weeks × 7 Days × 4 Meals = **112 unique meals**
 
-### Performance Optimization
+* Weekly themes:
 
-* LRU embedding cache
-* Parallel retrieval
-* Context compression (~60% token reduction)
+  * Egyptian
+  * Seaside
+  * Levantine
+  * Countryside
 
-### Reliability
+* Diet modes:
 
-* Multi-model fallback chain
-* Graceful degradation
-* Input validation (Pydantic)
+  * Standard
+  * Keto
+  * Vegetarian
 
-### Personalization
-
-* User profile integration (age, goals, conditions)
-* Context-aware meal planning
+* Zero duplication across the full plan
 
 ---
 
-## 🌐 Frontend–Backend Integration
+### 💬 Smart Bilingual Chat
 
-```javascript
-var API_BASE = window.location.origin;
-```
+* Language modes:
 
-* No hardcoded URLs
-* No cross-origin issues
-* Works across all environments
+  * `auto` (detect)
+  * `ar` (force Arabic)
+  * `en` (force English)
+
+* Full RTL support
+
+* Markdown → HTML rendering
+
+* Language-aware caching
 
 ---
 
-## 📊 Performance
+### 🧮 Health Calculators
+
+* BMR (Mifflin-St Jeor)
+* TDEE (5 activity levels)
+* Goal-based calories:
+
+  * Loss / Maintain / Gain
+* Smart macro distribution
+
+---
+
+### 🔍 Advanced Retrieval
+
+* Hybrid Search:
+
+  * Pinecone (Dense)
+  * BM25 (Sparse)
+
+* Adaptive thresholds:
+
+  * WEAK = 0.45
+  * MIN = 0.30
+
+* Dynamic `top_k`
+
+* Profile-aware retrieval context
+
+---
+
+## ⚡ Performance
 
 | Metric             | Value      |
 | ------------------ | ---------- |
@@ -147,88 +192,34 @@ var API_BASE = window.location.origin;
 | Context size       | 3–5 chunks |
 | Uptime             | ~99.9%     |
 
-Performance achieved through parallel retrieval, caching, and context compression.
+### Optimization Techniques
 
----
-
-## 🧠 Engineering Challenges & Solutions
-
-### API Design
-
-* Problem: POST/GET mismatch
-* Solution: Unified POST endpoint with Pydantic
-* Impact: Eliminated 405/422 errors
-
-### Startup Reliability
-
-* Problem: 503 despite running
-* Cause: Silent import failures
-* Solution: Explicit readiness state
-* Impact: Predictable system state
-
-### Deployment & CORS
-
-* Problem: Cross-origin failures
-* Solution: Single-origin architecture
-* Impact: No CORS configuration needed
-
-### Retrieval Quality
-
-* Problem: Weak results for low similarity queries
-* Solution: Adaptive retrieval expansion
-* Impact: Improved recall
-
-### Context Redundancy
-
-* Problem: Duplicate chunks
-* Solution: MMR deduplication
-* Impact: More relevant context
-
-### Personalization
-
-* Problem: Profile not used
-* Solution: Injected into prompt pipeline
-* Impact: Personalized outputs
-
-### External Dependencies
-
-* Problem: Pinecone SDK changes
-* Solution: Version-safe handling
-* Impact: Stable integration
-
-### Frontend Rendering
-
-* Problems: Markdown + UI clipping
-* Solutions: Markdown parser + CSS fixes
-* Impact: Clean UI
-
-### Meal Planning
-
-* Problem: Repeated meals
-* Solution: Themed plans + expanded dataset
-* Impact: Better diversity
+* Parallel retrieval
+* LRU embedding cache
+* Context compression
+* MMR deduplication
 
 ---
 
 ## 🧱 Tech Stack
 
-| Layer            | Technology              |
-| ---------------- | ----------------------- |
-| Backend          | FastAPI (>=0.111)       |
-| Frontend         | HTML / CSS / JavaScript |
-| Embeddings       | Voyage AI               |
-| Vector DB        | Pinecone                |
-| Sparse Retrieval | BM25                    |
-| LLM              | OpenRouter              |
-| Data             | Pandas / NumPy          |
-| Deployment       | Replit                  |
+| Layer            | Technology            |
+| ---------------- | --------------------- |
+| Backend          | FastAPI, Uvicorn      |
+| Frontend         | HTML, CSS, Vanilla JS |
+| Embeddings       | Voyage AI             |
+| Vector DB        | Pinecone              |
+| Sparse Retrieval | BM25                  |
+| LLM              | OpenRouter            |
+| Data             | Pandas / NumPy        |
+| Deployment       | Replit Autoscale      |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-NutriAI/
+nutriai/
 │
 ├── Frontend/
 │   └── index.html
@@ -236,34 +227,48 @@ NutriAI/
 └── backend/
     ├── main.py
     ├── routes.py
+    ├── llm/
     ├── services/
     ├── retrieval/
     ├── pipeline/
-    ├── llm/
     ├── utils/
-    └── vectorstore/
+    ├── vectorstore/
+    └── data/
 ```
 
 ---
 
-## ⚡ Quick Start
+## ⚙️ Setup & Installation
 
-### Install
+### 1. Environment Variables
+
+| Key                | Purpose    |
+| ------------------ | ---------- |
+| PINECONE_API_KEY   | Vector DB  |
+| VOYAGE_API_KEY     | Embeddings |
+| OPENROUTER_API_KEY | LLM        |
+
+Optional:
+
+```
+PINECONE_INDEX_NAME
+PINECONE_NAMESPACE
+PINECONE_REGION
+```
+
+---
+
+### 2. Run Locally
 
 ```bash
 pip install -r backend/requirements.txt
-```
-
-### Run pipeline
-
-```bash
-python -m backend.pipeline.main
-```
-
-### Start server
-
-```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 5000
+```
+
+Open:
+
+```
+http://localhost:5000
 ```
 
 ---
@@ -274,52 +279,72 @@ uvicorn backend.main:app --host 0.0.0.0 --port 5000
 
 ```json
 {
-  "q": "What foods help hypertension?",
+  "q": "What foods are high in omega-3?",
   "top_k": 5,
-  "profile": {}
-}
-```
-
-### Example Response
-
-```json
-{
-  "answer": "Foods that help hypertension include fruits, vegetables...",
-  "context": [
-    {"text": "...", "score": 0.82}
-  ],
-  "chunks_used": 5
+  "lang": "auto",
+  "profile": {
+    "age": 28,
+    "weight": 75,
+    "goal": "lose",
+    "diet": "standard"
+  },
+  "current_day": 5
 }
 ```
 
 ---
 
-## 📚 Data Pipeline
+## 📌 Example Output
+
+**Query:**
+
+> What foods are high in omega-3?
+
+**Response:**
+
+> Fatty fish such as salmon, mackerel, and sardines are among the richest sources of omega-3 fatty acids. Plant-based sources include flaxseeds, chia seeds, and walnuts.
+
+---
+
+## 🧠 Engineering Challenges & Solutions
+
+| Problem               | Solution                   | Impact           |
+| --------------------- | -------------------------- | ---------------- |
+| 503 errors on startup | Readiness state validation | Stable boot      |
+| Weak retrieval        | Adaptive thresholds        | Better recall    |
+| Duplicate context     | MMR deduplication          | Higher relevance |
+| CORS issues           | Single deployment          | Zero config      |
+| Profile ignored       | Injected into prompt       | Personalization  |
+| API inconsistencies   | Unified POST design        | Stability        |
+
+---
+
+## 📊 Data Pipeline
 
 * Source: Human Nutrition (OER Hawaii)
-* ~500 pages
+* ~500 pages processed
 * 3000+ chunks
 * 1024-d embeddings
 * Indexed in Pinecone
 
 ---
 
-##  Design Principles
+## 🚀 Achievements
 
-* Deterministic retrieval over probabilistic generation
-* Retrieval before generation
-* Minimize hallucination
-* Fail gracefully
-* Consistency across identical queries
+* ✅ 1906 vectors indexed
+* ✅ 112 unique meals (no repetition)
+* ✅ Full bilingual UX
+* ✅ Hybrid RAG with adaptive scoring
+* ✅ Production deployment (Autoscale)
 
 ---
 
-##  Future Work
+## 🔮 Future Work
 
 * Streaming responses (SSE / WebSockets)
-* Query classification
+* Query classification layer
 * RAG evaluation (RAGAS)
-* User memory layer
+* User memory system
 * Multi-source retrieval
 
 ---
